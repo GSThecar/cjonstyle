@@ -7,56 +7,51 @@
 
 import Foundation
 
-import Kingfisher
 import RxCocoa
 import RxSwift
 
 final class ListViewModel: ViewModelType {
     struct Input {
         let viewWillAppear: ControlEvent<Void>
-        let viewWillDisappear: ControlEvent<Void>
         let shouldPreFetch: ControlEvent<[IndexPath]>
         let didSelectRow: ControlEvent<IndexPath>
     }
 
     struct Output {
-        let shouldShowNavigationBar: Observable<Bool>
         let shouldFetch: Observable<Void>
-        let startedPreFetch: Observable<Void>
+        let startedPreFetch: Observable<Bool>
         let listDataSource: Observable<[ListSectionMetadata]>
         let shouldGoToWKWebView: Observable<WKWebViewModel?>
     }
 
-    private let useCase: ProductUseCase
+    private let productUseCase: ProductUseCase
+    private let preFetchUseCase: PrefetchUseCase
+    
 
-    init(with useCase: ProductUseCase) {
-        self.useCase = useCase
+    init(productUseCase: ProductUseCase, preFetchUseCase: PrefetchUseCase) {
+        self.productUseCase = productUseCase
+        self.preFetchUseCase = preFetchUseCase
     }
 
     func transform(input: Input) -> Output {
-        let shouldShowNavigationBar = Observable.merge(
-            input.viewWillAppear.map { false },
-            input.viewWillDisappear.map { true }
-        )
-
         let shouldFetch = input.viewWillAppear
-            .compactMap { [weak self] in self?.useCase.fetch }
-            .flatMap { fetch in
-                    Observable<Void>.create { observer in
-                        Task {
-                            do {
-                                try await fetch()
-                                observer.onNext(())
-                                observer.onCompleted()
-                            } catch {
-                                observer.onError(error)
-                            }
+            .compactMap { [weak self] in self?.productUseCase.fetch }
+            .flatMapLatest { fetch in
+                Observable.create { observer in
+                    Task {
+                        do {
+                            try await fetch()
+                            observer.onNext(())
+                            observer.onCompleted()
+                        } catch {
+                            observer.onError(error)
                         }
-                        return Disposables.create()
                     }
+                    return Disposables.create()
                 }
+            }
 
-        let listDataSource = useCase.observableListMetadatas().map {
+        let listDataSource = productUseCase.observableListMetadatas().map {
             [
                 ListSectionMetadata(header: "TODO: 필요하다면, 타입변형도 가능",
                                     items: $0,
@@ -64,11 +59,16 @@ final class ListViewModel: ViewModelType {
             ]
         }
 
-        let startedPrefetch = input.shouldPreFetch
-            .withLatestFrom(listDataSource) { indexPaths, datasource in
-                let urls = Set(indexPaths.map { datasource[$0.section].items[$0.row].thumbnailURL })
-                let processor = DownsamplingImageProcessor(size: CGSize(width: 200, height: 200))
-                ImagePrefetcher(resources: Array(urls), options: [.processor(processor)]).start()
+        let startedPreFetch = input.shouldPreFetch
+            .withLatestFrom(listDataSource) { indexPaths, sections in
+                indexPaths.compactMap {
+                    sections[safe: $0.section]?.items[safe: $0.row]?.thumbnailURL
+                }
+            }
+            .map { Array(Set($0)) }
+            .flatMapLatest { [weak self] urls in
+                guard let self else { return Observable<Bool>.just(false) }
+                return self.preFetchUseCase.prefetchImages(for: urls)
             }
 
         let shouldGoToWKWebView = input.didSelectRow.withLatestFrom(listDataSource) { indexPath, datasource -> WKWebViewModel? in
@@ -79,11 +79,11 @@ final class ListViewModel: ViewModelType {
             return WKWebViewModel(with: linkURL)
         }
 
-        return Output(shouldShowNavigationBar: shouldShowNavigationBar,
-                      shouldFetch: shouldFetch,
-                      startedPreFetch: startedPrefetch,
+        return Output(shouldFetch: shouldFetch,
+                      startedPreFetch: startedPreFetch,
                       listDataSource: listDataSource,
                       shouldGoToWKWebView: shouldGoToWKWebView)
     }
 
+    
 }

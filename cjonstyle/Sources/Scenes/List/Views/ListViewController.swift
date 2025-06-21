@@ -38,19 +38,14 @@ final class ListViewController: UIViewController, ViewType {
 
     func setupBinding() {
         let input = ViewModel.Input(viewWillAppear: rx.viewWillAppear,
-                                    viewWillDisappear: rx.viewWillDisappear,
                                     shouldPreFetch: tableView.rx.prefetchRows,
                                     didSelectRow: tableView.rx.itemSelected)
 
         let output = viewModel.transform(input: input)
 
-        output.shouldShowNavigationBar.asDriver(onErrorDriveWith: .empty()).drive { [weak self] shouldShow in
-            self?.navigationController?.navigationBar.isHidden = !shouldShow
-        }.disposed(by: disposeBag)
-
         output.shouldFetch.subscribe(onNext: {
             #if DEBUG
-            print(#function, "성공")
+            print(#function, "fetch 성공")
             #endif
         }, onError: { error in
             #if DEBUG
@@ -59,7 +54,12 @@ final class ListViewController: UIViewController, ViewType {
         })
         .disposed(by: disposeBag)
 
-        output.startedPreFetch.subscribe().disposed(by: disposeBag)
+        output.startedPreFetch.subscribe(onNext: { success in
+            #if DEBUG
+            let text = success ? "preFetch 성공" : "preFetch 실패"
+            print(#function, text)
+            #endif
+        }).disposed(by: disposeBag)
 
         output.listDataSource.asDriver(onErrorDriveWith: .empty()).drive {
             $0.bind(to: tableView.rx.items(dataSource: datasource))
