@@ -14,11 +14,13 @@ import RxSwift
 final class ListViewModel: ViewModelType {
     struct Input {
         let viewWillAppear: ControlEvent<Void>
+        let viewWillDisappear: ControlEvent<Void>
         let shouldPreFetch: ControlEvent<[IndexPath]>
         let didSelectRow: ControlEvent<IndexPath>
     }
 
     struct Output {
+        let shouldShowNavigationBar: Observable<Bool>
         let shouldFetch: Observable<Void>
         let startedPreFetch: Observable<Void>
         let listDataSource: Observable<[ListSectionMetadata]>
@@ -32,6 +34,11 @@ final class ListViewModel: ViewModelType {
     }
 
     func transform(input: Input) -> Output {
+        let shouldShowNavigationBar = Observable.merge(
+            input.viewWillAppear.map { false },
+            input.viewWillDisappear.map { true }
+        )
+
         let shouldFetch = input.viewWillAppear
             .compactMap { [weak self] in self?.useCase.fetch }
             .flatMap { fetch in
@@ -72,7 +79,8 @@ final class ListViewModel: ViewModelType {
             return WKWebViewModel(with: linkURL)
         }
 
-        return Output(shouldFetch: shouldFetch,
+        return Output(shouldShowNavigationBar: shouldShowNavigationBar,
+                      shouldFetch: shouldFetch,
                       startedPreFetch: startedPrefetch,
                       listDataSource: listDataSource,
                       shouldGoToWKWebView: shouldGoToWKWebView)

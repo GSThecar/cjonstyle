@@ -38,10 +38,15 @@ final class ListViewController: UIViewController, ViewType {
 
     func setupBinding() {
         let input = ViewModel.Input(viewWillAppear: rx.viewWillAppear,
+                                    viewWillDisappear: rx.viewWillDisappear,
                                     shouldPreFetch: tableView.rx.prefetchRows,
                                     didSelectRow: tableView.rx.itemSelected)
 
         let output = viewModel.transform(input: input)
+
+        output.shouldShowNavigationBar.asDriver(onErrorDriveWith: .empty()).drive { [weak self] shouldShow in
+            self?.navigationController?.navigationBar.isHidden = !shouldShow
+        }.disposed(by: disposeBag)
 
         output.shouldFetch.subscribe(onNext: {
             #if DEBUG
