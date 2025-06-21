@@ -37,7 +37,9 @@ final class ListViewController: UIViewController, ViewType {
     }
 
     func setupBinding() {
-        let input = ViewModel.Input(viewWillAppear: rx.viewWillAppear)
+        let input = ViewModel.Input(viewWillAppear: rx.viewWillAppear,
+                                    didSelectRow: tableView.rx.itemSelected)
+
         let output = viewModel.transform(input: input)
 
         output.shouldFetch.subscribe(onNext: {
@@ -53,6 +55,17 @@ final class ListViewController: UIViewController, ViewType {
 
         output.listDataSource.asDriver(onErrorDriveWith: .empty()).drive {
             $0.bind(to: tableView.rx.items(dataSource: datasource))
+        }.disposed(by: disposeBag)
+
+        output.shouldGoToWKWebView.asDriver(onErrorDriveWith: .empty()).drive { [weak self] viewModel in
+            if let viewModel = viewModel {
+                self?.navigationController?.pushViewController(WKWebViewController.create(with: viewModel), animated: true)
+                return
+            }
+
+            #if DEBUG
+            print(#function, "linkURL 없음")
+            #endif
         }.disposed(by: disposeBag)
     }
 

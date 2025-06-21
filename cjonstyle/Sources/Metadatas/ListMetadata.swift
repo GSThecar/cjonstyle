@@ -26,5 +26,5 @@ struct ListMetadata {
     let thumbnailURL: URL
     let name: String
     let price: String
-    var didTap: ((URL) -> Void)?
+    let link: String?
 }

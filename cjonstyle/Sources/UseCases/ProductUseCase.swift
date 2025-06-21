@@ -38,8 +38,9 @@ final class ProductUseCase{
                 let price = dto.price ?? 0
 
                 return ListMetadata(thumbnailURL: thumbnailURL,
-                             name: name,
-                             price: String(price))
+                                    name: name,
+                                    price: String(price),
+                                    link: dto.link?.components(separatedBy: .whitespacesAndNewlines).joined())
             }
         }
     }

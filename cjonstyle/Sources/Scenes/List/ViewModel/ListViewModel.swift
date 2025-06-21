@@ -13,11 +13,13 @@ import RxSwift
 final class ListViewModel: ViewModelType {
     struct Input {
         let viewWillAppear: ControlEvent<Void>
+        let didSelectRow: ControlEvent<IndexPath>
     }
 
     struct Output {
         let shouldFetch: Observable<Void>
         let listDataSource: Observable<[ListSectionMetadata]>
+        let shouldGoToWKWebView: Observable<WKWebViewModel?>
     }
 
     private let useCase: ProductUseCase
@@ -52,8 +54,17 @@ final class ListViewModel: ViewModelType {
             ]
         }
 
+        let shouldGoToWKWebView = input.didSelectRow.withLatestFrom(listDataSource) { indexPath, datasource -> WKWebViewModel? in
+            guard 
+                let link = datasource[indexPath.section].items[indexPath.row].link,
+                let linkURL = URL(string: link)
+            else { return nil }
+            return WKWebViewModel(with: linkURL)
+        }
+
         return Output(shouldFetch: shouldFetch,
-                      listDataSource: listDataSource)
+                      listDataSource: listDataSource,
+                      shouldGoToWKWebView: shouldGoToWKWebView)
     }
 
 }
