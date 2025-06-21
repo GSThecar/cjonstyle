@@ -7,7 +7,6 @@
 
 import UIKit
 
-import Kingfisher
 import RxCocoa
 import RxDataSources
 import RxSwift
@@ -39,6 +38,7 @@ final class ListViewController: UIViewController, ViewType {
 
     func setupBinding() {
         let input = ViewModel.Input(viewWillAppear: rx.viewWillAppear,
+                                    shouldPreFetch: tableView.rx.prefetchRows,
                                     didSelectRow: tableView.rx.itemSelected)
 
         let output = viewModel.transform(input: input)
@@ -54,6 +54,8 @@ final class ListViewController: UIViewController, ViewType {
         })
         .disposed(by: disposeBag)
 
+        output.startedPreFetch.subscribe().disposed(by: disposeBag)
+
         output.listDataSource.asDriver(onErrorDriveWith: .empty()).drive {
             $0.bind(to: tableView.rx.items(dataSource: datasource))
         }.disposed(by: disposeBag)
@@ -68,15 +70,6 @@ final class ListViewController: UIViewController, ViewType {
             print(#function, "linkURL 없음")
             #endif
         }.disposed(by: disposeBag)
-
-        tableView.rx.prefetchRows
-            .withLatestFrom(output.listDataSource) { ($0, $1) }
-            .subscribe(onNext: { indexPaths, datasource in
-                let urls = Set(indexPaths.map { datasource[$0.section].items[$0.row].thumbnailURL })
-                let processor = DownsamplingImageProcessor(size: CGSize(width: 200, height: 200))
-                ImagePrefetcher(resources: Array(urls), options: [.processor(processor)]).start()
-            })
-            .disposed(by: disposeBag)
 
         tableView.rx.willDisplayCell.withLatestFrom(output.listDataSource) { ($0, $1) }
             .subscribe(onNext: { cellWithIndexPath, datasource in

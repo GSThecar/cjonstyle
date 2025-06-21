@@ -7,17 +7,20 @@
 
 import Foundation
 
+import Kingfisher
 import RxCocoa
 import RxSwift
 
 final class ListViewModel: ViewModelType {
     struct Input {
         let viewWillAppear: ControlEvent<Void>
+        let shouldPreFetch: ControlEvent<[IndexPath]>
         let didSelectRow: ControlEvent<IndexPath>
     }
 
     struct Output {
         let shouldFetch: Observable<Void>
+        let startedPreFetch: Observable<Void>
         let listDataSource: Observable<[ListSectionMetadata]>
         let shouldGoToWKWebView: Observable<WKWebViewModel?>
     }
@@ -54,6 +57,13 @@ final class ListViewModel: ViewModelType {
             ]
         }
 
+        let startedPrefetch = input.shouldPreFetch
+            .withLatestFrom(listDataSource) { indexPaths, datasource in
+                let urls = Set(indexPaths.map { datasource[$0.section].items[$0.row].thumbnailURL })
+                let processor = DownsamplingImageProcessor(size: CGSize(width: 200, height: 200))
+                ImagePrefetcher(resources: Array(urls), options: [.processor(processor)]).start()
+            }
+
         let shouldGoToWKWebView = input.didSelectRow.withLatestFrom(listDataSource) { indexPath, datasource -> WKWebViewModel? in
             guard 
                 let link = datasource[indexPath.section].items[indexPath.row].link,
@@ -63,6 +73,7 @@ final class ListViewModel: ViewModelType {
         }
 
         return Output(shouldFetch: shouldFetch,
+                      startedPreFetch: startedPrefetch,
                       listDataSource: listDataSource,
                       shouldGoToWKWebView: shouldGoToWKWebView)
     }

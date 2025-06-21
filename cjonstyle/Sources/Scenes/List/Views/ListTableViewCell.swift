@@ -30,9 +30,11 @@ final class ListTableViewCell: UITableViewCell {
     }
 
     func preFetchThumbnail(with url: URL) {
-        let downsamplingImageProcessor = DownsamplingImageProcessor(size: thumbnailImageView.frame.size)
+        let processor = DownsamplingImageProcessor(size: CGSize(width: 200, height: 200))
         thumbnailImageView.kf.setImage(with: url, options: [
-            .processor(downsamplingImageProcessor)
+            .processor(processor),
+            .transition(.fade(0.2)),
+            .cacheOriginalImage
         ])
     }
 
@@ -51,9 +53,9 @@ final class ListTableViewCell: UITableViewCell {
     private func configureNameLabel() {
         contentView.addSubview(nameLabel)
         nameLabel.snp.makeConstraints {
-            $0.leading.equalTo(thumbnailImageView.snp.leading)
+            $0.leading.equalTo(thumbnailImageView.snp.leading).offset(4)
             $0.top.equalTo(thumbnailImageView.snp.bottom).offset(8)
-            $0.trailing.equalTo(thumbnailImageView.snp.trailing)
+            $0.trailing.equalTo(thumbnailImageView.snp.trailing).inset(4)
         }
     }
     private func configurePriceLabel() {
