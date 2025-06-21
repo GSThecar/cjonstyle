@@ -28,20 +28,31 @@ final class ProductUseCase{
 
     func observableListMetadatas() -> Observable<[ListMetadata]> {
         productDTOs.map { dtos -> [ListMetadata] in
-            dtos.compactMap { dto -> ListMetadata? in
+            dtos.compactMap { [weak self] dto -> ListMetadata? in
                 guard
                     let imagePath = dto.image?.components(separatedBy: .whitespacesAndNewlines).joined(),
-                    let thumbnailURL = URL(string: imagePath)
+                    let thumbnailURL = URL(string: imagePath),
+                    let price = self?.getMoney(from: dto.price)
                 else { return nil }
 
                 let name = dto.name ?? "-"
-                let price = dto.price ?? 0
 
                 return ListMetadata(thumbnailURL: thumbnailURL,
                                     name: name,
-                                    price: String(price),
+                                    price: price,
                                     link: dto.link?.components(separatedBy: .whitespacesAndNewlines).joined())
             }
         }
+    }
+
+    private func getMoney(from price: Int?) -> String {
+        let initializeString = "-"
+        guard let price = price else { return initializeString }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale.current
+
+        return formatter.string(from: NSNumber(value: price)) ?? initializeString
     }
 }

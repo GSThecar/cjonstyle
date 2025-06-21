@@ -41,6 +41,7 @@ final class ListTableViewCell: UITableViewCell {
     func update(with metadata: ListMetadata) {
         nameLabel.text = metadata.name
         priceLabel.text = metadata.price
+        preFetchThumbnail(with: metadata.thumbnailURL)
     }
 
     private func configureThumbnailImageView() {

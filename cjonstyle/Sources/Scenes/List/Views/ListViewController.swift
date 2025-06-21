@@ -78,8 +78,15 @@ final class ListViewController: UIViewController, ViewType {
 
         tableView.rx.willDisplayCell.withLatestFrom(output.listDataSource) { ($0, $1) }
             .subscribe(onNext: { cellWithIndexPath, datasource in
-                guard let cell = cellWithIndexPath.cell as? ListTableViewCell else { return }
-                let thumbnailURL = datasource[cellWithIndexPath.indexPath.section].items[cellWithIndexPath.indexPath.row].thumbnailURL
+                let section = datasource[cellWithIndexPath.indexPath.section]
+
+                guard
+                    !section.items.isEmpty,
+                    let cell = cellWithIndexPath.cell as? ListTableViewCell
+                else { return }
+
+                let thumbnailURL = section.items[cellWithIndexPath.indexPath.row].thumbnailURL
+
                 cell.preFetchThumbnail(with: thumbnailURL)
             })
             .disposed(by: disposeBag)
