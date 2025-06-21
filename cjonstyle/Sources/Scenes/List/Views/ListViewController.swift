@@ -7,6 +7,7 @@
 
 import UIKit
 
+import Kingfisher
 import RxCocoa
 import RxDataSources
 import RxSwift
@@ -67,6 +68,23 @@ final class ListViewController: UIViewController, ViewType {
             print(#function, "linkURL 없음")
             #endif
         }.disposed(by: disposeBag)
+
+        tableView.rx.prefetchRows
+            .withLatestFrom(output.listDataSource) { ($0, $1) }
+            .subscribe(onNext: { indexPaths, datasource in
+                let urls = Set(indexPaths.map { datasource[$0.section].items[$0.row].thumbnailURL })
+                let processor = DownsamplingImageProcessor(size: CGSize(width: 200, height: 200))
+                ImagePrefetcher(resources: Array(urls), options: [.processor(processor)]).start()
+            })
+            .disposed(by: disposeBag)
+
+        tableView.rx.willDisplayCell.withLatestFrom(output.listDataSource) { ($0, $1) }
+            .subscribe(onNext: { cellWithIndexPath, datasource in
+                guard let cell = cellWithIndexPath.cell as? ListTableViewCell else { return }
+                let thumbnailURL = datasource[cellWithIndexPath.indexPath.section].items[cellWithIndexPath.indexPath.row].thumbnailURL
+                cell.preFetchThumbnail(with: thumbnailURL)
+            })
+            .disposed(by: disposeBag)
     }
 
 }
