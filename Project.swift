@@ -19,12 +19,12 @@ let project = Project(
             sources: ["cjonstyle/Sources/**"],
             resources: ["cjonstyle/Resources/**"],
             dependencies: [
-                .external(name: "Kingfisher"),
-                .external(name: "Then"),
-                .external(name: "RxSwift"),
-                .external(name: "RxCocoa"),
-                .external(name: "RxDataSources"),
-                .external(name: "SnapKit")
+                .product(name: "Kingfisher", package: "Kingfisher"),
+                .product(name: "Then", package: "Then"),
+                .product(name: "RxSwift", package: "RxSwift"),
+                .product(name: "RxCocoa", package: "RxCocoa"),
+                .product(name: "RxDataSources", package: "RxDataSources"),
+                .product(name: "SnapKit", package: "SnapKit")
             ]
         ),
         .target(
