@@ -1,6 +1,5 @@
 [tools]
 tuist = "4.42.0"
-swift = "5.9.2"
 
 [env]
 APP_ENV = "development"
