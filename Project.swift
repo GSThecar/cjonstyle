@@ -18,7 +18,14 @@ let project = Project(
             ),
             sources: ["cjonstyle/Sources/**"],
             resources: ["cjonstyle/Resources/**"],
-            dependencies: []
+            dependencies: [
+                .external(name: "Kingfisher"),
+                .external(name: "Then"),
+                .external(name: "RxSwift"),
+                .external(name: "RxCocoa"),
+                .external(name: "RxDataSources"),
+                .external(name: "SnapKit")
+            ]
         ),
         .target(
             name: "cjonstyleTests",
