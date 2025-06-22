@@ -19,6 +19,10 @@ mise use -g tuist@4.43.0
 # Generate Xcode project
 tuist generate
 
+# Set Path (if not found tuist)
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
+source ~/.zshrc
+
 # Open the project
 open cjonstyle.xcodeproj
 ```
