@@ -23,6 +23,16 @@ tuist generate
 open cjonstyle.xcodeproj
 ```
 
+```
+# Swift Package Manager
+"https://github.com/onevcat/Kingfisher.git"
+"https://github.com/devxoul/Then.git",
+"https://github.com/ReactiveX/RxSwift.git"
+"https://github.com/RxSwiftCommunity/RxDataSources.git"
+"https://github.com/SnapKit/SnapKit.git"
+```
+
+
 ## Structure
 
 - `App/` - Main application code
